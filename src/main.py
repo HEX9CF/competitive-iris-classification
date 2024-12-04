@@ -7,28 +7,34 @@ from model import CompetitiveNN, Dataset
 def load_data():
     headers = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'class']
     data = pd.read_csv(filepath_or_buffer='../data/data.csv', header=None, names=headers)
-    # print(data)
     return data
 
 # 数据预处理
-def preprocess(data):
+def preprocess(data, train_size):
+    # 打乱数据
+    data = data.sample(frac=1).reset_index(drop=True)
+
     # 标签编码
     data['class'] = data['class'].map({'Iris-setosa': 0, 'Iris-versicolor': 1, 'Iris-virginica': 2})
 
     # 分离特征和标签
     features = data.iloc[:, :-1].values
-    tags = data.iloc[:, -1].values
+    labels = data.iloc[:, -1].values
 
     # 归一化
-    features = (features - features.mean(axis=0)) / features.std(axis=0)
+    features = (features - features.min(axis=0)) / (features.max(axis=0) - features.min(axis=0))
+    # for i in range(len(features)):
+    #     print(f'特征{i + 1}：{features[i]}，标签：{labels[i]}')
 
     # 划分训练集和测试集
-    train_size = int(len(data) * 0.8)
     train_features, test_features = features[:train_size], features[train_size:]
-    train_tags, test_tags = tags[:train_size], tags[train_size:]
+    train_labels, test_labels = labels[:train_size], labels[train_size:]
 
-    train_data = Dataset(train_features, train_tags)
-    test_data = Dataset(test_features, test_tags)
+    print('训练集大小：', len(train_features))
+    print('测试集大小：', len(test_features))
+
+    train_data = Dataset(train_features, train_labels)
+    test_data = Dataset(test_features, test_labels)
 
     return train_data, test_data
 
@@ -36,23 +42,28 @@ def preprocess(data):
 def test(model, test_data):
     prediction = model.predict(test_data.features)
 
-    print('测试结果：')
-    for i in range(len(test_data)):
-        print(f'预测值：{prediction[i]}，真实值：{test_data.tags[i]}')
+    # print('测试结果：')
+    # for i in range(len(test_data)):
+        # print(f'测试数据{i + 1}，输入：{test_data.features[i]}，预测值：{model.labels[prediction[i]]}，真实值：{test_data.labels[i]}')
 
-    accuracy = np.mean(prediction == test_data.tags) * 100
+    accuracy = np.mean(model.labels[prediction] == test_data.labels) * 100
     print(f'准确率：{accuracy:.2f}%')
-
 
 def main():
     data = load_data()
-    train_data, test_data = preprocess(data)
+    # print(data)
+
+    train_data, test_data = preprocess(data, 100)
 
     # 创建竞争神经网络
     model = CompetitiveNN(4, 3)
 
     # 训练竞争神经网络
-    model.train(train_data.features, lr=0.01, epochs=10)
+    model.train(train_data.features, train_data.labels, lr_initial=0.01, decay_rate=0.0, epochs=100)
+
+    model.determine_labels(train_data.features, train_data.labels)
+
+    test(model, train_data)
 
     test(model, test_data)
 
