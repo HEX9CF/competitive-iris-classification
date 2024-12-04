@@ -36,13 +36,29 @@ class CompetitiveNN:
 
     # 训练
     def train(self, x, lr=0.01, epochs=100):
+        distances = np.zeros((epochs, self.weights.shape[1]))
+        # 绘制初始权重
+        self.plot_weights(-1, x)
         for epoch in range(epochs):
+            epoch_distances = np.zeros(self.weights.shape[1])
             print(f'训练次数：{epoch + 1}')
             for i in range(len(x)):
                 outputs = self.forward(x[i])
                 winner = np.argmax(outputs)
                 self.weights[:, winner] += lr * (x[i] - self.weights[:, winner])
-            self.plot_weights(epoch, x)
+                epoch_distances[winner] = euclidean(x[i], self.weights[:, winner])
+            distances[epoch] = epoch_distances
+            # self.plot_weights(epoch, x)
+        # 绘制迭代后权重
+        self.plot_weights(epochs - 1, x)
+        # 绘制欧几里得距离
+        y = np.arange(epochs)
+        for i in range(self.weights.shape[1]):
+            plt.plot(y, distances[:, i])
+        plt.plot(y, distances.mean(axis=1), color='r', linestyle='--')
+        plt.xlabel('euclidean_distance')
+        plt.ylabel('epoch')
+        plt.show()
 
     # 预测
     def predict(self, x):
@@ -75,7 +91,6 @@ class CompetitiveNN:
 model = CompetitiveNN(4, 3)
 
 # 训练竞争神经网络
-model.plot_weights(0, train_features)
 model.train(train_features, lr=0.01, epochs=10)
 
 # 测试
