@@ -42,7 +42,7 @@ def preprocess(data, test_size):
     # 划分训练集和测试集
     # train_features, test_features = features[:train_size], features[train_size:]
     # train_labels, test_labels = labels[:train_size], labels[train_size:]
-    train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size=test_size, random_state=1)
+    train_features, test_features, train_labels, test_labels = train_test_split(features, labels, test_size=test_size, random_state=6)
 
     print('训练集大小：', len(train_features))
     print('测试集大小：', len(test_features))
@@ -56,9 +56,9 @@ def preprocess(data, test_size):
 def test(model, test_data):
     prediction = model.predict(test_data.features)
 
-    print('测试结果：')
-    for i in range(len(test_data)):
-        print(f'测试数据{i + 1}，输入：{test_data.features[i]}，预测值：{model.labels[prediction[i]]}，真实值：{test_data.labels[i]}')
+    # print('测试结果：')
+    # for i in range(len(test_data)):
+    #     print(f'测试数据{i + 1}，输入：{test_data.features[i]}，预测值：{model.labels[prediction[i]]}，真实值：{test_data.labels[i]}')
 
     accuracy = np.mean(model.labels[prediction] == test_data.labels) * 100
     print(f'准确率：{accuracy:.2f}%')
@@ -73,12 +73,11 @@ def main():
     model = CompetitiveNN(4, 3)
 
     # 训练竞争神经网络
-    model.train(train_data.features, train_data.labels, lr_initial=0.5, decay_rate=0.0001, epochs=2000)
+    model.train(train_data.features, train_data.labels, lr_initial=0.1, decay_rate=0.0001, epochs=100, use_threshold=True, plot=True)
 
     model.mark_labels(test_data.features, test_data.labels)
 
-    test(model, train_data)
-
+    # test(model, train_data)
     test(model, test_data)
 
 if __name__ == '__main__':
